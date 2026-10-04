@@ -69,6 +69,15 @@ Ask questions about your study material or attach study-note images and get AI-p
 - Google GenAI SDK
 - GitHub
 
+## 🌱 Future Scope
+
+- Support for multiple pages of notes
+- PDF note support
+- More exam-question formats
+- Subject-specific revision modes
+- Personalized revision suggestions
+- Improved visual learning features
+
 ## 📁 Project Structure
 
 ```text
