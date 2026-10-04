@@ -233,7 +233,7 @@ if st.button("Generate Exam Question"):
 
 # Chat / Upload Area
 
-st.subheader("💭 Quick Chat")
+
 
 user_input = st.chat_input(
     "Ask something or attach a photo of your study notes",
@@ -273,6 +273,9 @@ if user_input:
             )
         )
 
+    if text and "last_note" in st.session_state:
+        parts.append(st.session_state.last_note)
+        
     if text:
         st.session_state.messages.append(
             {
