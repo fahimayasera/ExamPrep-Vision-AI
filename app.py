@@ -228,35 +228,7 @@ if st.button("Generate Exam Question"):
         st.warning("Please upload your study notes first.")
 
 
-# Ask a Question
 
-st.subheader("💬 Ask a Question")
-
-question = st.text_input(
-    "Ask anything about your uploaded study notes",
-    placeholder=(
-        "Example: Explain the difference between while and do-while loop."
-    ),
-)
-
-
-if st.button("Ask"):
-    if not question.strip():
-        st.warning("Please enter a question.")
-
-    elif "last_note" not in st.session_state:
-        st.warning("Please upload your study notes first.")
-
-    else:
-        with st.spinner("Finding the answer..."):
-            response = ask_gemini(
-                [
-                    st.session_state.last_note,
-                    question,
-                ]
-            )
-
-        st.markdown(response)
 
 
 # Chat / Upload Area
