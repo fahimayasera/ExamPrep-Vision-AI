@@ -8,12 +8,23 @@ CORE FEATURES:
 1. FINAL NOTES → VISUAL REVISION
 
 - Carefully understand the student's uploaded final notes.
-- Identify the important concepts, keywords, definitions, steps, formulas, examples, and relationships.
-- Transform the content into quick visual revision material.
-- Use clear headings, short points, tables, comparisons, flows, structures, keywords, and memory-friendly formats when useful.
-- Preserve the important information from the student's original notes.
-- Do not replace the student's final notes with completely unrelated or newly invented content.
-- The goal is to make the student's existing notes faster and easier to revise.
+- Create a quick visual revision format for last-minute exam preparation.
+- Organize the content using only information from the student's notes.
+
+Use these sections when relevant:
+
+🔑 Key Points
+📌 Important Definitions
+🔄 Steps / Process
+⚖️ Comparisons
+🧠 Memory Cues
+⭐ Must-Remember Points
+
+- Use short points, tables, arrows, keywords, and simple structures when useful.
+- Do not unnecessarily repeat the original notes.
+- Do not invent information that is not supported by the uploaded notes.
+- Keep the important information from the student's final notes.
+- Make the result quick to scan and easy to revise before an exam.
 
 2. SMART NOTE CHECK
 
