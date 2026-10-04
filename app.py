@@ -9,7 +9,6 @@ from prompts import (
 
 
 MODEL_NAME = "gemini-3.8-flash"
-
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 
 
@@ -21,14 +20,31 @@ def get_gemini_client():
 gemini_client = get_gemini_client()
 
 
-# Onboarding
+def ask_gemini(parts):
+    try:
+        return st.session_state.chat.send_message(parts).text
+    except Exception as error:
+        return f"Sorry, something went wrong: {error}"
+
+
+def render_message(message):
+    if message["kind"] == "image":
+        st.image(message["content"], use_container_width=True)
+    else:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+
+# --------------------------------------------------
+# ONBOARDING
+# --------------------------------------------------
 
 if "onboarded" not in st.session_state:
-    st.title("ExamPrep Vision AI 📸")
-    st.caption(
-        "From Your Final Notes to Smart Revision — "
-        "See It. Revise It. Remember It. 🧠"
-    )
+    st.title("ExamPrep Vision AI 📚")
+
+    
+    st.caption("From Your Final Notes to Smart Revision")
+    st.markdown("*Understand It. Revise It. Remember It.*")
 
     with st.form("onboarding_form"):
         name = st.text_input("Your name")
@@ -70,49 +86,26 @@ if "onboarded" not in st.session_state:
         st.stop()
 
 
-def ask_gemini(parts):
-    try:
-        return st.session_state.chat.send_message(parts).text
-    except Exception as error:
-        return f"Sorry, something went wrong: {error}"
+# --------------------------------------------------
+# WELCOME
+# --------------------------------------------------
 
-
-def render_message(message):
-    with st.chat_message(message["role"]):
-        if message["kind"] == "text":
-            st.write(message["content"])
-        elif message["kind"] == "image":
-            st.image(message["content"])
-
-
-# Main App
-
-st.title("ExamPrep Vision AI 📸")
+st.title("ExamPrep Vision AI 📚")
 
 st.caption(
-    "Turn your final study notes into faster, smarter exam revision."
+    "From Your Final Notes to Smart Revision"
 )
 
+welcome_message = WELCOME_MESSAGE_TEMPLATE.format(
+    name=st.session_state.name
+)
 
-# Welcome
-
-if not st.session_state.messages:
-    st.session_state.messages.append(
-        {
-            "role": "assistant",
-            "kind": "text",
-            "content": WELCOME_MESSAGE_TEMPLATE.format(
-                name=st.session_state.name
-            ),
-        }
-    )
+st.markdown(welcome_message)
 
 
-for message in st.session_state.messages:
-    render_message(message)
-
-
-# Upload Final Notes
+# --------------------------------------------------
+# UPLOAD FINAL STUDY NOTES
+# --------------------------------------------------
 
 st.subheader("📸 Upload Your Final Study Notes")
 
@@ -136,67 +129,27 @@ if uploaded_file is not None:
         use_container_width=True,
     )
 
-    st.success("Your study notes are ready! You can now use the features below.")
-
-
-# Visual Revision
-
-st.subheader("🎯 Visual Revision")
-
-if st.button("Create Visual Revision"):
-    if "last_note" in st.session_state:
-       visual_revision_prompt = (
-        "Create a visual diagram from these final study notes. "
-        "Return ONLY valid Mermaid flowchart code. "
-        "Do not use Markdown code fences. "
-        "Use boxes, arrows, branches, and short keywords. "
-        "Choose the best diagram structure for the topic: flowchart, "
-        "concept map, hierarchy, process, or comparison. "
-        "Use only information from the uploaded notes. "
-        "Keep the diagram simple, clear, and easy to memorize."
+    st.success(
+        "Your study notes are ready! You can now use the features below."
     )
-        with st.spinner("Creating your visual revision..."):
-            response = ask_gemini(
-                [
-                    st.session_state.last_note,
-                    visual_revision_prompt,
-                ]
-            )
-
-        components.html(
-            f"""
-            <div class="mermaid">
-            {response}
-            </div>
-
-            <script type="module">
-                import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
-
-                mermaid.initialize({{
-                    startOnLoad: true,
-                    theme: "default"
-                }});
-            </script>
-            """,
-            height=600,
-            scrolling=True,
-        )
-
-    else:
-        st.warning("Please upload your study notes first.")
 
 
-# Smart Note Check
+# --------------------------------------------------
+# SMART NOTE CHECK
+# --------------------------------------------------
 
 st.subheader("📝 Smart Note Check")
 
 if st.button("Check My Notes"):
     if "last_note" in st.session_state:
+
         note_check_prompt = (
-            "Review the student's uploaded final study notes. "
-            "Identify repeated, unnecessary, overly detailed, or unclear points. "
-            "For each suggestion, briefly explain what can be shortened, combined, "
-            "or removed. Do not remove important syllabus-related information."
+            "Review the student's uploaded final study notes carefully. "
+            "Help the student validate and prioritize their notes for revision. "
+            "Identify important concepts that appear to be missing, repeated points, "
+            "unclear wording, and key points that deserve more attention. "
+            "Do not rewrite or remove the student's final notes. "
+            "Use only information visible in the uploaded notes."
         )
 
         with st.spinner("Checking your notes..."):
@@ -213,19 +166,22 @@ if st.button("Check My Notes"):
         st.warning("Please upload your study notes first.")
 
 
-# Generate Exam Questions
+# --------------------------------------------------
+# GENERATE EXAM QUESTIONS
+# --------------------------------------------------
 
 st.subheader("📚 Generate Exam Questions")
 
 marks = st.selectbox(
     "Choose the marks",
-    [3, 5, 10],
+    [2, 3, 4, 5, 10],
     format_func=lambda x: f"{x} Marks",
 )
 
 
 if st.button("Generate Exam Question"):
     if "last_note" in st.session_state:
+
         question_prompt = (
             f"Generate one {marks}-mark exam question based only on the "
             "student's uploaded final study notes. "
@@ -247,12 +203,9 @@ if st.button("Generate Exam Question"):
         st.warning("Please upload your study notes first.")
 
 
-
-
-
-# Chat / Upload Area
-
-
+# --------------------------------------------------
+# CHAT
+# --------------------------------------------------
 
 user_input = st.chat_input(
     "Ask something or attach a photo of your study notes",
@@ -262,12 +215,15 @@ user_input = st.chat_input(
 
 
 if user_input:
+
     photo = user_input.files[0] if user_input.files else None
     text = user_input.text
 
     parts = []
 
+    # Handle uploaded image in chat
     if photo is not None:
+
         photo_bytes = photo.getvalue()
 
         st.session_state.last_note = types.Part.from_bytes(
@@ -292,10 +248,13 @@ if user_input:
             )
         )
 
+    # Use previous notes when asking a text question
     if text and "last_note" in st.session_state:
         parts.append(st.session_state.last_note)
-        
+
+    # Handle text
     if text:
+
         st.session_state.messages.append(
             {
                 "role": "user",
@@ -309,10 +268,12 @@ if user_input:
         parts.append(text)
 
     elif photo is not None:
+
         parts.append(
             "Understand these uploaded study notes and help me revise them."
         )
 
+    # Get AI response
     with st.spinner("Thinking..."):
         response = ask_gemini(parts)
 
