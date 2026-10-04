@@ -5,7 +5,6 @@ from google.genai import types
 from prompts import (
     SYSTEM_PROMPT,
     WELCOME_MESSAGE_TEMPLATE,
-    SUMMARY_REQUEST_PROMPT,
 )
 
 
@@ -71,9 +70,19 @@ if "onboarded" not in st.session_state:
         st.stop()
 
 
+def ask_gemini(parts):
+    try:
+        return st.session_state.chat.send_message(parts).text
+    except Exception as error:
+        return f"Sorry, something went wrong: {error}"
+
+
 # Chat interface
 
 st.title("ExamPrep Vision AI 📸")
+
+
+# Generate Exam Questions
 
 st.subheader("Generate Exam Questions")
 
@@ -84,15 +93,47 @@ marks = st.selectbox(
 )
 
 if st.button("Generate Exam Question"):
-    st.info(f"Ready to generate a {marks}-mark question from your uploaded notes.")
+    question_prompt = (
+        f"Generate one {marks}-mark exam question based only on the "
+        "student's uploaded final study notes. "
+        "Match the question to the expected depth for the marks. "
+        "Give only the exam question."
+    )
+
+    if "last_note" in st.session_state:
+        with st.spinner("Generating exam question..."):
+            response = ask_gemini([
+                st.session_state.last_note,
+                question_prompt,
+            ])
+
+        st.write(response)
+    else:
+        st.warning("Please upload your study notes first.")
+
+
+# Smart Note Check
 
 st.subheader("Smart Note Check")
 
 if st.button("Check My Notes"):
-    st.info(
-        "Your notes will be checked for repeated, unnecessary, "
-        "or overly detailed points."
+    note_check_prompt = (
+        "Review the student's uploaded final study notes. "
+        "Identify repeated, unnecessary, overly detailed, or unclear points. "
+        "For each suggestion, briefly explain what can be shortened, combined, "
+        "or removed. Do not remove important syllabus-related information."
     )
+
+    if "last_note" in st.session_state:
+        with st.spinner("Checking your notes..."):
+            response = ask_gemini([
+                st.session_state.last_note,
+                note_check_prompt,
+            ])
+
+        st.write(response)
+    else:
+        st.warning("Please upload your study notes first.")
 
 
 def render_message(message):
@@ -102,25 +143,35 @@ def render_message(message):
         elif message["kind"] == "image":
             st.image(message["content"])
 
+
+# Ask a Question
+
 st.subheader("Ask a Question")
 
 question = st.text_input(
     "Ask anything about your uploaded study notes",
-    placeholder="Example: Explain the difference between while and do-while loop."
+    placeholder=(
+        "Example: Explain the difference between while and do-while loop."
+    ),
 )
 
 if st.button("Ask"):
     if question.strip():
-        st.info("Your question will be answered using your uploaded notes.")
+        if "last_note" in st.session_state:
+            with st.spinner("Finding the answer..."):
+                response = ask_gemini([
+                    st.session_state.last_note,
+                    question,
+                ])
+
+            st.write(response)
+        else:
+            st.warning("Please upload your study notes first.")
     else:
         st.warning("Please enter a question.")
 
-def ask_gemini(parts):
-    try:
-        return st.session_state.chat.send_message(parts).text
-    except Exception as error:
-        return f"Sorry, something went wrong: {error}"
 
+# Welcome message
 
 if not st.session_state.messages:
     st.session_state.messages.append(
@@ -155,6 +206,11 @@ if user_input:
 
     if photo is not None:
         photo_bytes = photo.getvalue()
+
+        st.session_state.last_note = types.Part.from_bytes(
+            data=photo_bytes,
+            mime_type=photo.type,
+        )
 
         st.session_state.messages.append(
             {
