@@ -63,8 +63,8 @@ if "onboarded" not in st.session_state:
                 )
 
                 st.session_state.messages = []
-
                 st.session_state.onboarded = True
+
                 st.rerun()
 
         st.stop()
@@ -77,65 +77,6 @@ def ask_gemini(parts):
         return f"Sorry, something went wrong: {error}"
 
 
-# Chat interface
-
-st.title("ExamPrep Vision AI 📸")
-
-
-# Generate Exam Questions
-
-st.subheader("Generate Exam Questions")
-
-marks = st.selectbox(
-    "Choose the marks",
-    [3, 5, 10],
-    format_func=lambda x: f"{x} Marks",
-)
-
-if st.button("Generate Exam Question"):
-    question_prompt = (
-        f"Generate one {marks}-mark exam question based only on the "
-        "student's uploaded final study notes. "
-        "Match the question to the expected depth for the marks. "
-        "Give only the exam question."
-    )
-
-    if "last_note" in st.session_state:
-        with st.spinner("Generating exam question..."):
-            response = ask_gemini([
-                st.session_state.last_note,
-                question_prompt,
-            ])
-
-        st.write(response)
-    else:
-        st.warning("Please upload your study notes first.")
-
-
-# Smart Note Check
-
-st.subheader("Smart Note Check")
-
-if st.button("Check My Notes"):
-    note_check_prompt = (
-        "Review the student's uploaded final study notes. "
-        "Identify repeated, unnecessary, overly detailed, or unclear points. "
-        "For each suggestion, briefly explain what can be shortened, combined, "
-        "or removed. Do not remove important syllabus-related information."
-    )
-
-    if "last_note" in st.session_state:
-        with st.spinner("Checking your notes..."):
-            response = ask_gemini([
-                st.session_state.last_note,
-                note_check_prompt,
-            ])
-
-        st.write(response)
-    else:
-        st.warning("Please upload your study notes first.")
-
-
 def render_message(message):
     with st.chat_message(message["role"]):
         if message["kind"] == "text":
@@ -144,34 +85,16 @@ def render_message(message):
             st.image(message["content"])
 
 
-# Ask a Question
+# Main App
 
-st.subheader("Ask a Question")
+st.title("ExamPrep Vision AI 📸")
 
-question = st.text_input(
-    "Ask anything about your uploaded study notes",
-    placeholder=(
-        "Example: Explain the difference between while and do-while loop."
-    ),
+st.caption(
+    "Turn your final study notes into faster, smarter exam revision."
 )
 
-if st.button("Ask"):
-    if question.strip():
-        if "last_note" in st.session_state:
-            with st.spinner("Finding the answer..."):
-                response = ask_gemini([
-                    st.session_state.last_note,
-                    question,
-                ])
 
-            st.write(response)
-        else:
-            st.warning("Please upload your study notes first.")
-    else:
-        st.warning("Please enter a question.")
-
-
-# Welcome message
+# Welcome
 
 if not st.session_state.messages:
     st.session_state.messages.append(
@@ -189,10 +112,159 @@ for message in st.session_state.messages:
     render_message(message)
 
 
-# Chat input with image upload
+# Upload Final Notes
+
+st.subheader("📸 Upload Your Final Study Notes")
+
+uploaded_file = st.file_uploader(
+    "Upload a photo of your final notes",
+    type=["jpg", "jpeg", "png"],
+)
+
+
+if uploaded_file is not None:
+    photo_bytes = uploaded_file.getvalue()
+
+    st.session_state.last_note = types.Part.from_bytes(
+        data=photo_bytes,
+        mime_type=uploaded_file.type,
+    )
+
+    st.image(
+        photo_bytes,
+        caption="Your uploaded final notes",
+        use_container_width=True,
+    )
+
+    st.success("Your study notes are ready! You can now use the features below.")
+
+
+# Visual Revision
+
+st.subheader("🎯 Visual Revision")
+
+if st.button("Create Visual Revision"):
+    if "last_note" in st.session_state:
+        visual_revision_prompt = (
+            "Transform these final study notes into a quick visual revision sheet. "
+            "Identify key points, important definitions, keywords, structures, "
+            "comparisons, flows, and memory cues. "
+            "Keep the important information from the original notes. "
+            "Make it easy to revise quickly before an exam."
+        )
+
+        with st.spinner("Creating your visual revision..."):
+            response = ask_gemini(
+                [
+                    st.session_state.last_note,
+                    visual_revision_prompt,
+                ]
+            )
+
+        st.markdown(response)
+
+    else:
+        st.warning("Please upload your study notes first.")
+
+
+# Smart Note Check
+
+st.subheader("📝 Smart Note Check")
+
+if st.button("Check My Notes"):
+    if "last_note" in st.session_state:
+        note_check_prompt = (
+            "Review the student's uploaded final study notes. "
+            "Identify repeated, unnecessary, overly detailed, or unclear points. "
+            "For each suggestion, briefly explain what can be shortened, combined, "
+            "or removed. Do not remove important syllabus-related information."
+        )
+
+        with st.spinner("Checking your notes..."):
+            response = ask_gemini(
+                [
+                    st.session_state.last_note,
+                    note_check_prompt,
+                ]
+            )
+
+        st.markdown(response)
+
+    else:
+        st.warning("Please upload your study notes first.")
+
+
+# Generate Exam Questions
+
+st.subheader("📚 Generate Exam Questions")
+
+marks = st.selectbox(
+    "Choose the marks",
+    [3, 5, 10],
+    format_func=lambda x: f"{x} Marks",
+)
+
+
+if st.button("Generate Exam Question"):
+    if "last_note" in st.session_state:
+        question_prompt = (
+            f"Generate one {marks}-mark exam question based only on the "
+            "student's uploaded final study notes. "
+            "Match the question to the expected depth for the marks. "
+            "Give only the exam question."
+        )
+
+        with st.spinner("Generating exam question..."):
+            response = ask_gemini(
+                [
+                    st.session_state.last_note,
+                    question_prompt,
+                ]
+            )
+
+        st.markdown(response)
+
+    else:
+        st.warning("Please upload your study notes first.")
+
+
+# Ask a Question
+
+st.subheader("💬 Ask a Question")
+
+question = st.text_input(
+    "Ask anything about your uploaded study notes",
+    placeholder=(
+        "Example: Explain the difference between while and do-while loop."
+    ),
+)
+
+
+if st.button("Ask"):
+    if not question.strip():
+        st.warning("Please enter a question.")
+
+    elif "last_note" not in st.session_state:
+        st.warning("Please upload your study notes first.")
+
+    else:
+        with st.spinner("Finding the answer..."):
+            response = ask_gemini(
+                [
+                    st.session_state.last_note,
+                    question,
+                ]
+            )
+
+        st.markdown(response)
+
+
+# Chat / Upload Area
+
+st.subheader("💭 Quick Chat")
 
 user_input = st.chat_input(
-    "Explore your topic, or attach a photo of your study notes",
+    "Ask something or attach a photo of your study notes",
     accept_file=True,
     file_type=["jpg", "jpeg", "png"],
 )
@@ -244,14 +316,10 @@ if user_input:
 
     elif photo is not None:
         parts.append(
-            "Transform these final study notes into a visual revision sheet. "
-            "Identify key points, important definitions, keywords, structures, "
-            "comparisons, flows, and memory cues. Also check for repeated or "
-            "unnecessary points that could be shortened without removing "
-            "important information. Do not simply repeat the notes."
+            "Understand these uploaded study notes and help me revise them."
         )
 
-    with st.spinner("Turning your notes into smart revision..."):
+    with st.spinner("Thinking..."):
         response = ask_gemini(parts)
 
     with st.chat_message("assistant"):
