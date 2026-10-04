@@ -145,14 +145,16 @@ st.subheader("🎯 Visual Revision")
 
 if st.button("Create Visual Revision"):
     if "last_note" in st.session_state:
-        visual_revision_prompt = (
-            "Transform these final study notes into a quick visual revision sheet. "
-            "Identify key points, important definitions, keywords, structures, "
-            "comparisons, flows, and memory cues. "
-            "Keep the important information from the original notes. "
-            "Make it easy to revise quickly before an exam."
-        )
-
+       visual_revision_prompt = (
+        "Create a visual diagram from these final study notes. "
+        "Return ONLY valid Mermaid flowchart code. "
+        "Do not use Markdown code fences. "
+        "Use boxes, arrows, branches, and short keywords. "
+        "Choose the best diagram structure for the topic: flowchart, "
+        "concept map, hierarchy, process, or comparison. "
+        "Use only information from the uploaded notes. "
+        "Keep the diagram simple, clear, and easy to memorize."
+    )
         with st.spinner("Creating your visual revision..."):
             response = ask_gemini(
                 [
@@ -161,7 +163,24 @@ if st.button("Create Visual Revision"):
                 ]
             )
 
-        st.markdown(response)
+        components.html(
+            f"""
+            <div class="mermaid">
+            {response}
+            </div>
+
+            <script type="module">
+                import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+
+                mermaid.initialize({{
+                    startOnLoad: true,
+                    theme: "default"
+                }});
+            </script>
+            """,
+            height=600,
+            scrolling=True,
+        )
 
     else:
         st.warning("Please upload your study notes first.")
